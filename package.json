@@ -1,0 +1,27 @@
+{
+  "name": "aura-analytics-worker",
+  "version": "1.0.0",
+  "description": "Analytics collection and processing worker for Aura Voice",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "build": "tsc",
+    "deploy": "npm run build && wrangler deploy",
+    "tail": "wrangler tail",
+    "setup": "./setup.sh",
+    "test": "./test-analytics-with-logs.sh health",
+    "migrations": "for f in migrations/*.sql; do wrangler d1 execute aura-db --file=\"$f\"; done"
+  },
+  "keywords": ["cloudflare", "workers", "analytics", "d1"],
+  "author": "Aura Voice Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240403.0",
+    "@types/node": "^20.14.9",
+    "typescript": "^5.4.5",
+    "wrangler": "^4.8.0"
+  },
+  "dependencies": {
+    "nanoid": "^5.0.7"
+  }
+}

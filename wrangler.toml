@@ -1,0 +1,23 @@
+name = "aura-analytics-worker"
+main = "./dist/index.js"
+compatibility_date = "2024-05-01"
+
+[vars]
+# Environment configuration
+LOG_LEVEL = "info"
+EVAL_BATCH_SIZE = "50"  # Number of queries to evaluate per cron run
+
+# D1 Database binding (replace with your database ID)
+[[d1_databases]]
+binding = "AURA_DB"
+database_name = "aura-analytics-db"
+database_id = "YOUR_D1_DATABASE_ID_HERE"
+
+# KV namespace for evaluation queue (replace with your KV namespace ID)
+[[kv_namespaces]]
+binding = "EVAL_QUEUE"
+id = "YOUR_KV_NAMESPACE_ID_HERE"
+
+# Scheduled cron trigger for evaluation
+[triggers]
+crons = ["*/1 * * * *"]  # Run every minute
