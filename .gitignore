@@ -1,0 +1,27 @@
+node_modules
+**/node_modules
+**/node_modules/.package-lock.json
+*.log
+.env
+.env.*
+.DS_Store
+/dist
+*.local
+
+# Build outputs
+backend-worker/dist
+
+# Wrangler temp files
+backend-worker/.wrangler/
+**/.wrangler/
+
+# Cloudflare dev environments
+backend-worker/dev-*/
+**/dev-*/
+
+# Temporary build files
+**/tmp/
+**/*.tmp
+package-lock.json
+
+vid16778471615749421518.mp3
