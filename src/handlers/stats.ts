@@ -35,6 +35,15 @@ export async function handleStats(
     case 'hourly':
       return await getHourlyStats(params, env, logger);
     
+    case 'llm-usage':
+      return await getLLMUsageStats(params, env, logger);
+    
+    case 'customer-insights':
+      return await getCustomerInsights(params, env, logger);
+    
+    case 'recent-calls':
+      return await getRecentCalls(params, env, logger);
+    
     default:
       throw new Error(`Unknown stats endpoint: ${pathname}`);
   }
@@ -299,5 +308,119 @@ async function getHourlyStats(
     avgLatencyMs: Math.round(row.avg_latency as number || 0),
     costUsd: row.cost || 0,
     sessions: row.sessions || 0
+  }));
+}
+
+// Get LLM usage statistics
+async function getLLMUsageStats(
+  params: StatsQueryParams,
+  env: AnalyticsEnv,
+  logger: Logger
+): Promise<any[]> {
+  const { start, end } = parsePeriod(params.period || '24h');
+  
+  const query = `
+    SELECT 
+      model_name,
+      provider,
+      SUM(total_calls) as total_calls,
+      SUM(total_tokens) as total_tokens,
+      SUM(total_cost_usd) as total_cost,
+      AVG(total_latency_ms / NULLIF(total_calls, 0)) as avg_latency,
+      SUM(error_count) * 100.0 / SUM(total_calls) as error_rate,
+      (SUM(total_calls) - SUM(error_count)) * 100.0 / SUM(total_calls) as success_rate
+    FROM llm_usage_hourly
+    WHERE hour_bucket * 1000 >= ?1 AND hour_bucket * 1000 <= ?2
+    GROUP BY model_name, provider
+    ORDER BY total_calls DESC
+  `;
+  
+  const results = await env.AURA_DB.prepare(query).bind(start, end).all();
+  
+  return results.results.map(row => ({
+    modelName: row.model_name as string,
+    provider: row.provider as string,
+    totalCalls: row.total_calls as number || 0,
+    totalTokens: row.total_tokens as number || 0,
+    totalCost: row.total_cost as number || 0,
+    avgLatency: Math.round(row.avg_latency as number || 0),
+    errorRate: Math.round((row.error_rate as number || 0) * 100) / 100,
+    successRate: Math.round((row.success_rate as number || 0) * 100) / 100
+  }));
+}
+
+// Get customer insights
+async function getCustomerInsights(
+  params: StatsQueryParams,
+  env: AnalyticsEnv,
+  logger: Logger
+): Promise<any[]> {
+  const query = `
+    SELECT 
+      customer_id,
+      total_interactions,
+      avg_latency_ms,
+      total_cost_usd,
+      preferred_topics,
+      satisfaction_score,
+      last_active
+    FROM customer_insights
+    ORDER BY total_interactions DESC
+    LIMIT ?1
+  `;
+  
+  const results = await env.AURA_DB.prepare(query).bind(params.limit || 10).all();
+  
+  return results.results.map(row => ({
+    customerId: row.customer_id as string,
+    totalInteractions: row.total_interactions as number,
+    avgLatency: Math.round(row.avg_latency_ms as number || 0),
+    totalCost: row.total_cost_usd as number || 0,
+    preferredTopics: row.preferred_topics ? JSON.parse(row.preferred_topics as string) : [],
+    satisfactionScore: row.satisfaction_score as number || 0,
+    lastActive: row.last_active as number
+  }));
+}
+
+// Get recent LLM calls
+async function getRecentCalls(
+  params: StatsQueryParams,
+  env: AnalyticsEnv,
+  logger: Logger
+): Promise<any[]> {
+  const query = `
+    SELECT 
+      call_id,
+      customer_id,
+      timestamp,
+      model_name,
+      provider,
+      prompt_text,
+      completion_text,
+      tokens_prompt,
+      tokens_completion,
+      latency_ms,
+      cost_usd,
+      error_message
+    FROM llm_calls
+    ORDER BY timestamp DESC
+    LIMIT ?1
+  `;
+  
+  const results = await env.AURA_DB.prepare(query).bind(params.limit || 50).all();
+  
+  return results.results.map(row => ({
+    callId: row.call_id as string,
+    customerId: row.customer_id as string || undefined,
+    timestamp: row.timestamp as number,
+    modelName: row.model_name as string,
+    provider: row.provider as string,
+    promptText: row.prompt_text as string,
+    completionText: row.completion_text as string || undefined,
+    tokensPrompt: row.tokens_prompt as number,
+    tokensCompletion: row.tokens_completion as number,
+    latencyMs: row.latency_ms as number,
+    costUsd: row.cost_usd as number,
+    errorMessage: row.error_message as string || undefined
   }));
 }
