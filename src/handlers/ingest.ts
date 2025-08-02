@@ -148,7 +148,6 @@ export async function handleIngest(
 
       return new Response('ok', { status: 200 });
     }
-
     // Handle other event types (e.g., purchase, visit) if needed
     logger.warn('Unknown event type', { type: payload.type });
     return new Response('bad request', { status: 400 });
@@ -204,6 +203,7 @@ async function updateHourlyStats(
   } catch (error) {
     logger.error('Failed to update hourly stats', error);
   }
+<<<<<<< HEAD
 }
 
 // Update LLM usage statistics
@@ -315,3 +315,6 @@ async function updateCustomerInsights(
     logger.error('Failed to update customer insights', error);
   }
 }
+=======
+}
+>>>>>>> 8b3927b8c812312452cd3c6a3c537aa35dc65819

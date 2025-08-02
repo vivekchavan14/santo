@@ -51,7 +51,6 @@ export interface LLMCallEvent {
   errorMessage?: string;         // If call failed
   requestMetadata?: string;      // JSON string of additional data
 }
-
 export interface EvaluationResult {
   queryId: string;
   label: 'GOOD' | 'REVIEW' | 'BAD';
